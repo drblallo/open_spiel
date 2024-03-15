@@ -89,7 +89,7 @@ def eval_against_random_bots(env, trained_agents, random_agents, num_episodes):
 
 
 def main(_):
-  game = "tic_tac_toe"
+  game = "space_hulk"
   num_players = 2
 
   env = rl_environment.Environment(game)

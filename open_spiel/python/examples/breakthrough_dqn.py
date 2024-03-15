@@ -75,10 +75,10 @@ def eval_against_random_bots(env, trained_agents, random_agents, num_episodes):
 
 
 def main(_):
-  game = "breakthrough"
+  game = "space_hulk"
   num_players = 2
 
-  env_configs = {"columns": 5, "rows": 5}
+  env_configs = {}
   env = rl_environment.Environment(game, **env_configs)
   info_state_size = env.observation_spec()["info_state"][0]
   num_actions = env.action_spec()["num_actions"]

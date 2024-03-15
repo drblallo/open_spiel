@@ -30,6 +30,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 # Set default build type.
 set (BUILD_TYPE $ENV{BUILD_TYPE})
@@ -215,6 +216,7 @@ link_libraries(open_spiel_core
   absl::str_format
   absl::strings
   absl::time
+  /tmp/libspace_hulk.so
 )
 
 # Just the minimal base library: no games.
