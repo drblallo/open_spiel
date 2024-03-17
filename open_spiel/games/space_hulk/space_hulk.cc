@@ -33,7 +33,7 @@ const GameType kGameType{
     GameType::Dynamics::kSequential,
     GameType::ChanceMode::kSampledStochastic,
     GameType::Information::kImperfectInformation,
-    GameType::Utility::kZeroSum,
+    GameType::Utility::kGeneralSum,
     GameType::RewardModel::kRewards,
     /*max_num_players=*/2,
     /*min_num_players=*/2,
@@ -67,7 +67,13 @@ void SpaceHulkState::DoApplyAction(Action move) {
   SPIEL_CHECK_GT(getGame()->actionsTable.size(),  move);
   SPIEL_CHECK_TRUE(canApplyAction(getGame()->actionsTable[move]));
   auto* action = &getGame()->actionsTable[move];
+
+
+
   rl_apply__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_Game(const_cast<AnyGameAction*>(action), const_cast<::Game*>(&game));
+
+  previous_states_rewards = current_states_rewards;
+  rl_m_score__Board_r_double(&current_states_rewards, const_cast<::Board*>(&game.board)); 
 }
 
 std::vector<Action> SpaceHulkState::LegalActions() const {
@@ -106,6 +112,8 @@ std::string SpaceHulkState::ToString() const {
 SpaceHulkState::SpaceHulkState(const SpaceHulkState & other) : State(other){
     rl_play__r_Game(&this->game);
     rl_m_assign__Game_Game(&game, const_cast<::Game*>(&other.game));
+    previous_states_rewards = other.previous_states_rewards;
+    current_states_rewards = other.current_states_rewards;
 }
   
 SpaceHulkState& SpaceHulkState::operator=(const SpaceHulkState & Other)
@@ -113,6 +121,8 @@ SpaceHulkState& SpaceHulkState::operator=(const SpaceHulkState & Other)
     if (this == &Other)
         return *this;
     rl_m_assign__Game_Game(&game, const_cast<::Game*>(&Other.game));
+    previous_states_rewards = Other.previous_states_rewards;
+    current_states_rewards = Other.current_states_rewards;
     return *this;
 }
 
@@ -138,10 +148,13 @@ bool SpaceHulkState::IsTerminal() const {
     return result != 0;
 }
 
+std::vector<double> SpaceHulkState::Rewards() const {
+    auto diff = current_states_rewards - previous_states_rewards;
+    return {diff, -diff};
+}
+
 std::vector<double> SpaceHulkState::Returns() const {
-    double value;
-    rl_m_score__Board_r_double(&value, const_cast<::Board*>(&game.board)); 
-    return {value, -value};
+    return {current_states_rewards, -current_states_rewards};
 }
 
 std::string SpaceHulkState::InformationStateString(Player player) const {
@@ -166,8 +179,9 @@ void SpaceHulkState::ObservationTensor(Player player,
 
   rl_as_byte_vector__Game_r_VectorTint8_tT(&t, const_cast<::Game*>(&game));
 
+  TensorView<2> view(values, {256, getGame()->game_size / 256}, true);
   for (int cell = 0; cell < t._size; ++cell) {
-      values[cell] = float(t._data[cell]) / 30;
+        view[{*((uint8_t*)&t._data[cell]), cell}] = 1.0;
   }
 
   rl_m_drop__VectorTint8_tT(&t);
@@ -196,7 +210,7 @@ SpaceHulkGame::SpaceHulkGame(const GameParameters& params)
         VectorTint8_tT serialized;
         rl_as_byte_vector__Game_r_VectorTint8_tT(&serialized, &fake_game);
 
-        game_size = static_cast<size_t>(serialized._size);
+        game_size = static_cast<size_t>(serialized._size) * 256;
 
         rl_m_drop__VectorTint8_tT(&serialized);
         rl_m_drop__Game(&fake_game);

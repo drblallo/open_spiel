@@ -51,7 +51,7 @@ public:
   SpaceHulkState &operator=(const SpaceHulkState &);
 
   bool IsChanceNode() const override {
-    return game.board.is_marine_decision == 2;
+    return false ;
   }
 
   std::string Serialize() const override;
@@ -64,6 +64,7 @@ public:
       return kChancePlayerId;
     }
     if (game.board.is_marine_decision != 0) {
+       return 0;
     }
     return 1;
   }
@@ -71,6 +72,7 @@ public:
   std::string ToString() const override;
   bool IsTerminal() const override;
   std::vector<double> Returns() const override;
+  std::vector<double> Rewards() const override;
   std::string InformationStateString(Player player) const override;
   std::string ObservationString(Player player) const override;
   void ObservationTensor(Player player,
@@ -86,6 +88,8 @@ public:
 protected:
   ::Game game;
   void DoApplyAction(Action move) override;
+  double previous_states_rewards = 0;
+  double current_states_rewards = 0;
 
 private:
   Player outcome_ = kInvalidPlayer;
@@ -107,7 +111,7 @@ public:
   absl::optional<double> UtilitySum() const override { return 0; }
   double MaxUtility() const override { return 1; }
   std::vector<int> ObservationTensorShape() const override {
-    return {game_size};
+    return {256, game_size/256};
   }
   int MaxGameLength() const override { return 200000; }
   std::string ActionToString(Player player, Action action_id) const override;

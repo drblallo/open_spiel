@@ -30,6 +30,7 @@ import numpy as np
 from open_spiel.python import rl_environment
 from open_spiel.python.algorithms import random_agent
 from open_spiel.python.algorithms import tabular_qlearner
+from open_spiel.python.pytorch.dqn import DQN
 
 FLAGS = flags.FLAGS
 
@@ -83,20 +84,22 @@ def eval_against_random_bots(env, trained_agents, random_agents, num_episodes):
         player_id = time_step.observations["current_player"]
         agent_output = cur_agents[player_id].step(time_step, is_evaluation=True)
         time_step = env.step([agent_output.action])
-      if time_step.rewards[player_pos] > 0:
-        wins[player_pos] += 1
+        wins[player_pos] += time_step.rewards[player_pos]
   return wins / num_episodes
 
 
-def main(_):
+def one_run(epsilon_decay_duration, learning_rate):
   game = "space_hulk"
   num_players = 2
 
   env = rl_environment.Environment(game)
   num_actions = env.action_spec()["num_actions"]
+  state_size = env.observation_spec()["info_state"][0]
+  print(num_actions, state_size)
 
   agents = [
-      tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions)
+      #tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions, discount_factor=0.95)
+      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.95, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=256, learning_rate=learning_rate)
       for idx in range(num_players)
   ]
 
@@ -109,9 +112,9 @@ def main(_):
   # 1. Train the agents
   training_episodes = FLAGS.num_episodes
   for cur_episode in range(training_episodes):
-    if cur_episode % int(1e4) == 0:
-      win_rates = eval_against_random_bots(env, agents, random_agents, 1000)
-      logging.info("Starting episode %s, win_rates %s", cur_episode, win_rates)
+    if cur_episode % int(1e3) == 0:
+      win_rates = eval_against_random_bots(env, agents, random_agents, 100)
+      logging.info("Starting episode %s, win_rates %s, decay %s, lr %s", cur_episode, win_rates, epsilon_decay_duration, learning_rate)
     time_step = env.reset()
     while not time_step.last():
       player_id = time_step.observations["current_player"]
@@ -121,6 +124,8 @@ def main(_):
     # Episode is over, step all agents with final info state.
     for agent in agents:
       agent.step(time_step)
+      if (cur_episode + 1) % int(5e3) == 0:
+          agent.step_scheduler()
 
   if not FLAGS.interactive_play:
     return
@@ -128,32 +133,20 @@ def main(_):
   # 2. Play from the command line against the trained agent.
   human_player = 1
   while True:
-    logging.info("You are playing as %s", "O" if human_player else "X")
     time_step = env.reset()
     while not time_step.last():
       player_id = time_step.observations["current_player"]
-      if player_id == human_player:
-        agent_out = agents[human_player].step(time_step, is_evaluation=True)
-        logging.info("\n%s", agent_out.probs.reshape((3, 3)))
-        logging.info("\n%s", pretty_board(time_step))
-        action = command_line_action(time_step)
-      else:
-        agent_out = agents[1 - human_player].step(time_step, is_evaluation=True)
-        action = agent_out.action
+      agent_out = agents[player_id].step(time_step, is_evaluation=True)
+      action = agent_out.action
       time_step = env.step([action])
+      print(player_id, env.get_state.action_to_string(action), time_step.rewards[player_id])
+    break
 
-    logging.info("\n%s", pretty_board(time_step))
-
-    logging.info("End of game!")
-    if time_step.rewards[human_player] > 0:
-      logging.info("You win")
-    elif time_step.rewards[human_player] < 0:
-      logging.info("You lose")
-    else:
-      logging.info("Draw")
-    # Switch order of players
-    human_player = 1 - human_player
-
+def main(_):
+  for x in [2e3, 2e4, 2e2]:
+    for y in [0.1, 0.001]:
+        one_run(x, y)
 
 if __name__ == "__main__":
-  app.run(main)
+    app.run(lambda _ : main(_))
+    

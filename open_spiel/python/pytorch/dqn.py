@@ -22,6 +22,7 @@ from scipy import stats
 import torch
 from torch import nn
 import torch.nn.functional as F
+from torch.optim.lr_scheduler import ExponentialLR
 
 from open_spiel.python import rl_agent
 from open_spiel.python.utils.replay_buffer import ReplayBuffer
@@ -187,6 +188,10 @@ class DQN(rl_agent.AbstractAgent):
           self._q_network.parameters(), lr=learning_rate)
     else:
       raise ValueError("Not implemented, choose from 'adam' and 'sgd'.")
+    self._scheduler = ExponentialLR(self._optimizer, gamma=0.9)
+
+  def step_scheduler(self):
+      self._scheduler.step()
 
   def step(self, time_step, is_evaluation=False, add_transition_record=True):
     """Returns the action to be taken and updates the Q-network if needed.
