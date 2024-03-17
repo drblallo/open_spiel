@@ -206,6 +206,13 @@ include_directories (abseil-cpp)
 add_library(open_spiel_core OBJECT ${OPEN_SPIEL_CORE_FILES})
 target_include_directories (
   open_spiel_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} abseil-cpp)
+
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/librlc.so
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/games/space_hulk/game.rl
+    COMMAND rlc -O2 ${CMAKE_CURRENT_SOURCE_DIR}/games/space_hulk/game.rl -o ${CMAKE_CURRENT_BINARY_DIR}/librlc.so --shared)
+add_custom_target(rl_lib DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/librlc.so)
+
 link_libraries(open_spiel_core
   absl::algorithm
   absl::flags
@@ -216,7 +223,7 @@ link_libraries(open_spiel_core
   absl::str_format
   absl::strings
   absl::time
-  /tmp/libspace_hulk.so
+  ${CMAKE_CURRENT_BINARY_DIR}/librlc.so
 )
 
 # Just the minimal base library: no games.

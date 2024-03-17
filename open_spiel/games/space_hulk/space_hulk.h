@@ -25,7 +25,7 @@
 extern "C" {
 #define RLC_GET_TYPE_DECLS
 #define RLC_GET_FUNCTION_DECLS
-#include "wrapper.h"
+#include "space_hulk/wrapper.h"
 }
 
 // Simple game of Noughts and Crosses:
@@ -50,9 +50,7 @@ public:
   SpaceHulkState(const SpaceHulkState &);
   SpaceHulkState &operator=(const SpaceHulkState &);
 
-  bool IsChanceNode() const override {
-    return false ;
-  }
+  bool IsChanceNode() const override { return false; }
 
   std::string Serialize() const override;
 
@@ -63,10 +61,10 @@ public:
     if (IsChanceNode()) {
       return kChancePlayerId;
     }
-    if (game.board.is_marine_decision != 0) {
-       return 0;
-    }
-    return 1;
+    int64_t to_return;
+    rl_get_current_player__Game_r_int64_t(&to_return,
+                                          const_cast<::Game *>(&game));
+    return to_return;
   }
   std::string ActionToString(Player player, Action action_id) const override;
   std::string ToString() const override;
@@ -111,7 +109,7 @@ public:
   absl::optional<double> UtilitySum() const override { return 0; }
   double MaxUtility() const override { return 1; }
   std::vector<int> ObservationTensorShape() const override {
-    return {256, game_size/256};
+    return {256, game_size / 256};
   }
   int MaxGameLength() const override { return 200000; }
   std::string ActionToString(Player player, Action action_id) const override;

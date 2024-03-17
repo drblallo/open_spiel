@@ -95,7 +95,7 @@ def one_run(epsilon_decay_duration, learning_rate):
   env = rl_environment.Environment(game)
   num_actions = env.action_spec()["num_actions"]
   state_size = env.observation_spec()["info_state"][0]
-  print(num_actions, state_size)
+  logging.info("num actions: %s, state size %s", num_actions, state_size)
 
   agents = [
       #tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions, discount_factor=0.95)
@@ -149,4 +149,4 @@ def main(_):
 
 if __name__ == "__main__":
     app.run(lambda _ : main(_))
-    
+

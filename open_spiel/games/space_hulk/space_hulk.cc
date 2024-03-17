@@ -56,7 +56,7 @@ RegisterSingleTensorObserver single_tensor(kGameType.short_name);
 
 bool SpaceHulkState::canApplyAction(const AnyGameAction &action) const {
     uint8_t result;
-    rl_can_apply_impl__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_Game_r_bool(&result, const_cast<AnyGameAction*>(&action), const_cast<::Game*>(&game));
+    rl_can_apply_impl__alt_GamePickWord_or_GameGuess_Game_r_bool(&result, const_cast<AnyGameAction*>(&action), const_cast<::Game*>(&game));
 
     return result != 0;
 }
@@ -70,10 +70,10 @@ void SpaceHulkState::DoApplyAction(Action move) {
 
 
 
-  rl_apply__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_Game(const_cast<AnyGameAction*>(action), const_cast<::Game*>(&game));
+  rl_apply__alt_GamePickWord_or_GameGuess_Game(const_cast<AnyGameAction*>(action), const_cast<::Game*>(&game));
 
   previous_states_rewards = current_states_rewards;
-  rl_m_score__Board_r_double(&current_states_rewards, const_cast<::Board*>(&game.board)); 
+  rl_score__Game_r_double(&current_states_rewards, const_cast<::Game*>(&game)); 
 }
 
 std::vector<Action> SpaceHulkState::LegalActions() const {
@@ -98,6 +98,7 @@ SpaceHulkState::SpaceHulkState(std::shared_ptr<const Game> game) : State(game) {
     rl_play__r_Game(&this->game);
 }
 SpaceHulkState::~SpaceHulkState(){ 
+        // ToDo Fix
     rl_m_drop__Game(&this->game);
 }
 
@@ -197,7 +198,7 @@ std::string SpaceHulkGame::ActionToString(Player player,
 
   ::String rl_string;
   const auto* action = &actionsTable[action_id];
-  rl_to_string__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_r_String(&rl_string, const_cast<AnyGameAction*>(action));
+  rl_to_string__alt_GamePickWord_or_GameGuess_r_String(&rl_string, const_cast<AnyGameAction*>(action));
   std::string str((char*)rl_string._data._data);
   rl_m_drop__String(&rl_string);
   return str;
@@ -205,6 +206,7 @@ std::string SpaceHulkGame::ActionToString(Player player,
 
 SpaceHulkGame::SpaceHulkGame(const GameParameters& params)
     : Game(kGameType, params) {
+        std::cout << "Here";
         ::Game fake_game;
         rl_play__r_Game(&fake_game);
         VectorTint8_tT serialized;
@@ -213,19 +215,21 @@ SpaceHulkGame::SpaceHulkGame(const GameParameters& params)
         game_size = static_cast<size_t>(serialized._size) * 256;
 
         rl_m_drop__VectorTint8_tT(&serialized);
-        rl_m_drop__Game(&fake_game);
+         //ToDo Fix
+         rl_m_drop__Game(&fake_game);
 
         AnyGameAction action;
 
-        VectorTalt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuitT result;
-        rl_enumerate__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_r_VectorTalt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuitT(&result, &action);
+        VectorTalt_GamePickWord_or_GameGuessT result;
+        rl_enumerate__alt_GamePickWord_or_GameGuess_r_VectorTalt_GamePickWord_or_GameGuessT(&result, &action);
         actionsTable.resize(result._size);
         for (size_t i = 0; i < result._size; i++) {
-            rl_m_init__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit(&actionsTable[i]);
-            rl_m_assign__alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit_alt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuit(&actionsTable[i], &result._data[i]);
+            rl_m_init__alt_GamePickWord_or_GameGuess(&actionsTable[i]);
+            rl_m_assign__alt_GamePickWord_or_GameGuess_alt_GamePickWord_or_GameGuess(&actionsTable[i], &result._data[i]);
         }
 
-        rl_m_drop__VectorTalt_GameBeginMove_or_GameTurn_or_GameMove_or_GameEndMove_or_GameShoot_or_GameDoNothing_or_GameOverwatch_or_GameGuard_or_GameAssault_or_GameGuardReroll_or_GameFaceAttacker_or_GamePassTurn_or_GameQuitT(&result);
+        // ToDo Fix
+         rl_m_drop__VectorTalt_GamePickWord_or_GameGuessT(&result);
 
     }
 

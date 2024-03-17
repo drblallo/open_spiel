@@ -194,9 +194,17 @@ if (${OPEN_SPIEL_BUILD_WITH_ACPC})
   set(GAME_SOURCES ${GAME_SOURCES} universal_poker/universal_poker.cc universal_poker/universal_poker.h)
 endif()
 
-add_library (games OBJECT ${GAME_SOURCES})
+add_custom_command(
+    OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/space_hulk/wrapper.h
+    DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/space_hulk/game.rl
+    COMMAND rlc ${CMAKE_CURRENT_SOURCE_DIR}/space_hulk/game.rl -o ${CMAKE_CURRENT_BINARY_DIR}/space_hulk/wrapper.h --header)
 
-target_include_directories (games PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+add_custom_target(rl_lib_header DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/space_hulk/wrapper.h)
+
+add_library(games OBJECT ${GAME_SOURCES})
+add_dependencies(games rl_lib_header)
+
+target_include_directories (games PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 if (${OPEN_SPIEL_BUILD_WITH_HANABI})
   add_subdirectory(hanabi)
