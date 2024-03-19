@@ -3,15 +3,15 @@ import bounded_arg
 
 
 ent Board:
-    Byte[9] slots
+    BInt<0, 3>[9] slots
     Bool playerTurn
 
 
     fun get(Int x, Int y) -> Int:
-        return int(self.slots[x + (y*3)])
+        return self.slots[x + (y*3)].value
 
     fun set(Int x, Int y, Int val): 
-        self.slots[x + (y * 3)] = byte(val)
+        self.slots[x + (y * 3)] = val
 
     fun full() -> Bool:
         let x = 0
@@ -55,9 +55,9 @@ ent Board:
 
 act play() -> Game:
     frm board : Board
-    board.playerTurn = byte(1)
+    board.playerTurn = false
     while !board.full():
-        act Asd(BoundedArg<0, 3> x, BoundedArg<0, 3> y) {
+        act mark(BInt<0, 3> x, BInt<0, 3> y) {
             board.get(x.value, y.value) == 0
         }
 
@@ -82,6 +82,8 @@ fun score(Game g) -> Float:
 fun gen_methods():
   let x : AnyGameAction
   gen_python_methods(play(), x)
+  let v = enumerate(x)
+  v.size()
 
 fun main() -> Int:
   return 0

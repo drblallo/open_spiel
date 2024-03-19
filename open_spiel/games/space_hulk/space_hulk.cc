@@ -55,10 +55,8 @@ RegisterSingleTensorObserver single_tensor(kGameType.short_name);
 }  // namespace
 
 bool SpaceHulkState::canApplyAction(const AnyGameAction &action) const {
-    uint8_t result;
-    rl_can_apply_impl__alt_GamePickWord_or_GameGuess_Game_r_bool(&result, const_cast<AnyGameAction*>(&action), const_cast<::Game*>(&game));
+    return ::can_apply_impl(const_cast<AnyGameAction&>(action), const_cast<::Game&>(game));
 
-    return result != 0;
 }
 
 void SpaceHulkState::DoApplyAction(Action move) {
@@ -69,11 +67,10 @@ void SpaceHulkState::DoApplyAction(Action move) {
   auto* action = &getGame()->actionsTable[move];
 
 
-
-  rl_apply__alt_GamePickWord_or_GameGuess_Game(const_cast<AnyGameAction*>(action), const_cast<::Game*>(&game));
+  apply(const_cast<AnyGameAction&>(*action), const_cast<::Game&>(game));
 
   previous_states_rewards = current_states_rewards;
-  rl_score__Game_r_double(&current_states_rewards, const_cast<::Game*>(&game)); 
+  current_states_rewards = score(const_cast<::Game&>(game));
 }
 
 std::vector<Action> SpaceHulkState::LegalActions() const {
@@ -99,13 +96,12 @@ SpaceHulkState::SpaceHulkState(std::shared_ptr<const Game> game) : State(game) {
 }
 SpaceHulkState::~SpaceHulkState(){ 
         // ToDo Fix
-    rl_m_drop__Game(&this->game);
 }
 
 std::string SpaceHulkState::ToString() const {
   ::String rl_string;
   rl_to_string__Game_r_String(&rl_string, const_cast<::Game*>(&game));
-  std::string str((char*)rl_string._data._data);
+  std::string str((char*)rl_string.content._data.content._data);
   rl_m_drop__String(&rl_string);
   return str;
 }
@@ -135,18 +131,19 @@ std::unique_ptr<State> SpaceHulkGame::DeserializeState(const std::string& str) c
     auto state = NewInitialState();
     auto* casted = reinterpret_cast<SpaceHulkState*>(state.get());
     String rl_string;
-    rl_string._data._data = reinterpret_cast<int8_t*>(const_cast<char*>(&str.front()));
-    rl_string._data._capacity = str.capacity();
-    rl_string._data._size = str.size();
-    uint8_t result;
-    rl_from_string__Game_String_r_bool(&result, &casted->game, &rl_string);
+    rl_string.content._data.content._data = reinterpret_cast<int8_t*>(const_cast<char*>(&str.front()));
+    rl_string.content._data.content._capacity = str.capacity();
+    rl_string.content._data.content._size = str.size();
+    from_string(casted->game, rl_string);
+    rl_string.content._data.content._data = nullptr;
+    rl_string.content._data.content._size = 0;
+    rl_string.content._data.content._capacity = 0;
     return state;
+
 }
 
 bool SpaceHulkState::IsTerminal() const {
-    std::uint8_t result;
-    rl_m_is_done__Game_r_bool(&result, const_cast<::Game*>(&game));
-    return result != 0;
+    return const_cast<::Game&>(game).is_done();
 }
 
 std::vector<double> SpaceHulkState::Rewards() const {
@@ -176,16 +173,26 @@ void SpaceHulkState::ObservationTensor(Player player,
   SPIEL_CHECK_LT(player, num_players_);
 
   SPIEL_CHECK_EQ(values.size(), getGame()->game_size);
-  VectorTint8_tT t;
+  std::vector<double> v(values.size(), 0.0);
+  VectorTdoubleT to_fill;
+  to_fill.content._data = v.data();
+  to_fill.content._size = v.size();
+  to_fill.content._capacity = v.size();
+  
+  to_observation_tensor(const_cast<::Game&>(game), to_fill);
 
-  rl_as_byte_vector__Game_r_VectorTint8_tT(&t, const_cast<::Game*>(&game));
+  for (size_t i = 0; i < v.size(); i++)
+      values[i] = v[i];
 
-  TensorView<2> view(values, {256, getGame()->game_size / 256}, true);
-  for (int cell = 0; cell < t._size; ++cell) {
-        view[{*((uint8_t*)&t._data[cell]), cell}] = 1.0;
-  }
+  //TensorView<2> view(values, {256, getGame()->game_size / 256}, true);
+  //for (int cell = 0; cell < t.content._size; ++cell) {
+        //view[{*((uint8_t*)&t.content._data[cell]), cell}] = 1.0;
+  //}
 
-  rl_m_drop__VectorTint8_tT(&t);
+  to_fill.content._data = nullptr;
+  to_fill.content._size = 0;
+  to_fill.content._capacity = 0;
+
 }
 
 
@@ -196,40 +203,27 @@ std::unique_ptr<State> SpaceHulkState::Clone() const {
 std::string SpaceHulkGame::ActionToString(Player player,
                                           Action action_id) const {
 
-  ::String rl_string;
   const auto* action = &actionsTable[action_id];
-  rl_to_string__alt_GamePickWord_or_GameGuess_r_String(&rl_string, const_cast<AnyGameAction*>(action));
-  std::string str((char*)rl_string._data._data);
-  rl_m_drop__String(&rl_string);
+  auto rl_string = to_string(const_cast<AnyGameAction&>(*action));
+  std::string str((char*)rl_string.content._data.content._data, rl_string.size());
   return str;
 }
 
 SpaceHulkGame::SpaceHulkGame(const GameParameters& params)
     : Game(kGameType, params) {
-        std::cout << "Here";
-        ::Game fake_game;
-        rl_play__r_Game(&fake_game);
-        VectorTint8_tT serialized;
-        rl_as_byte_vector__Game_r_VectorTint8_tT(&serialized, &fake_game);
+        auto fake_game = play();
 
-        game_size = static_cast<size_t>(serialized._size) * 256;
-
-        rl_m_drop__VectorTint8_tT(&serialized);
-         //ToDo Fix
-         rl_m_drop__Game(&fake_game);
+        game_size =  observation_tensor_size(fake_game);
 
         AnyGameAction action;
 
-        VectorTalt_GamePickWord_or_GameGuessT result;
-        rl_enumerate__alt_GamePickWord_or_GameGuess_r_VectorTalt_GamePickWord_or_GameGuessT(&result, &action);
-        actionsTable.resize(result._size);
-        for (size_t i = 0; i < result._size; i++) {
-            rl_m_init__alt_GamePickWord_or_GameGuess(&actionsTable[i]);
-            rl_m_assign__alt_GamePickWord_or_GameGuess_alt_GamePickWord_or_GameGuess(&actionsTable[i], &result._data[i]);
+        auto result = enumerate(action);
+        actionsTable.resize(result.size());
+        for (int64_t i = 0; i < result.size(); i++) {
+            actionsTable[i] = result.content._data[i];
+            std::cout << ActionToString(0, i) << std::endl;
         }
 
-        // ToDo Fix
-         rl_m_drop__VectorTalt_GamePickWord_or_GameGuessT(&result);
 
     }
 

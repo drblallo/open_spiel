@@ -34,7 +34,7 @@ from open_spiel.python.pytorch.dqn import DQN
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_episodes", int(5e4), "Number of train episodes.")
+flags.DEFINE_integer("num_episodes", int(13e3), "Number of train episodes.")
 flags.DEFINE_boolean(
     "interactive_play",
     True,
@@ -112,6 +112,8 @@ def one_run(epsilon_decay_duration, learning_rate):
   # 1. Train the agents
   training_episodes = FLAGS.num_episodes
   for cur_episode in range(training_episodes):
+    if cur_episode % int(1e2) == 0:
+        logging.info(f"episode {cur_episode}")
     if cur_episode % int(1e3) == 0:
       win_rates = eval_against_random_bots(env, agents, random_agents, 100)
       logging.info("Starting episode %s, win_rates %s, decay %s, lr %s", cur_episode, win_rates, epsilon_decay_duration, learning_rate)
@@ -143,8 +145,8 @@ def one_run(epsilon_decay_duration, learning_rate):
     break
 
 def main(_):
-  for x in [2e3, 2e4, 2e2]:
-    for y in [0.1, 0.001]:
+  for x in [2e3]:
+    for y in [0.1]:
         one_run(x, y)
 
 if __name__ == "__main__":

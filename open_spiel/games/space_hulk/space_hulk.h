@@ -22,11 +22,17 @@
 #include <vector>
 
 #include "open_spiel/spiel.h"
-extern "C" {
+
 #define RLC_GET_TYPE_DECLS
+#include "space_hulk/wrapper.h"
+
+extern "C" {
 #define RLC_GET_FUNCTION_DECLS
 #include "space_hulk/wrapper.h"
 }
+
+#define RLC_GET_TYPE_DEFS
+#include "space_hulk/wrapper.h"
 
 // Simple game of Noughts and Crosses:
 // https://en.wikipedia.org/wiki/Tic-tac-toe
@@ -61,10 +67,7 @@ public:
     if (IsChanceNode()) {
       return kChancePlayerId;
     }
-    int64_t to_return;
-    rl_get_current_player__Game_r_int64_t(&to_return,
-                                          const_cast<::Game *>(&game));
-    return to_return;
+    return get_current_player(const_cast<::Game &>(game));
   }
   std::string ActionToString(Player player, Action action_id) const override;
   std::string ToString() const override;
@@ -109,7 +112,7 @@ public:
   absl::optional<double> UtilitySum() const override { return 0; }
   double MaxUtility() const override { return 1; }
   std::vector<int> ObservationTensorShape() const override {
-    return {256, game_size / 256};
+    return {game_size};
   }
   int MaxGameLength() const override { return 200000; }
   std::string ActionToString(Player player, Action action_id) const override;
