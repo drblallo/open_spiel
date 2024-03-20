@@ -41,10 +41,10 @@ ent Board:
     if y < 0:
       return false
 
-    if x > 28:
+    if x >= 28:
       return false
 
-    if y > 28:
+    if y >= 28:
       return false
 
     let iter = 0
@@ -190,7 +190,7 @@ fun make_board() -> Board:
   board.command_points.owner = 1
   board.units.append(make_marine(2, 13))
   board.units.get(0).direction = Direction::right
-  board.units.append(make_genestealer(29, 25))
+  board.units.append(make_genestealer(27, 25))
   return board
 
 
