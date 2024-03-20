@@ -30,6 +30,24 @@ ent Board:
     else:
       return false
 
+  fun pretty_print_board():
+    let to_print : String
+    let y = 0 
+    while y != 28:
+        let x = 0 
+        while x != 29:
+          if !(self.get_index_of_unit_at(x, y) is Nothing):
+            to_print.append('o')
+          else if self.map[y][x] == 1:
+            to_print.append('X')
+          else:
+            to_print.append(' ')
+          x = x + 1
+        y = y + 1
+        to_print.append('\n')
+    print(to_print)
+
+
   fun can_move_to(Unit unit, Int absolute_direction) -> Bool:
     let direction : Direction
     direction.value = absolute_direction	
@@ -190,7 +208,7 @@ fun make_board() -> Board:
   board.command_points.owner = 1
   board.units.append(make_marine(2, 13))
   board.units.get(0).direction = Direction::right
-  board.units.append(make_genestealer(27, 25))
+  board.units.append(make_genestealer(27, 13))
   return board
 
 
