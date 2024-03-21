@@ -34,7 +34,7 @@ from open_spiel.python.pytorch.dqn import DQN
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_episodes", int(13e3), "Number of train episodes.")
+flags.DEFINE_integer("num_episodes", int(40e3), "Number of train episodes.")
 flags.DEFINE_boolean(
     "interactive_play",
     True,
@@ -99,7 +99,7 @@ def one_run(epsilon_decay_duration, learning_rate):
 
   agents = [
       #tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions, discount_factor=0.95)
-      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.95, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=256, learning_rate=learning_rate)
+      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.92, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=[256, 256, 256], learning_rate=learning_rate)
       for idx in range(num_players)
   ]
 

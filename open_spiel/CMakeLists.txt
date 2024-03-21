@@ -210,7 +210,7 @@ target_include_directories (
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/librlc.so
     DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/games/space_hulk/game.rl
-    COMMAND rlc -O2 ${CMAKE_CURRENT_SOURCE_DIR}/games/space_hulk/game.rl -o ${CMAKE_CURRENT_BINARY_DIR}/librlc.so --shared)
+    COMMAND rlc -O2 --emit-bound-checks=false ${CMAKE_CURRENT_SOURCE_DIR}/games/space_hulk/game.rl -o ${CMAKE_CURRENT_BINARY_DIR}/librlc.so --shared)
 add_custom_target(rl_lib DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/librlc.so)
 
 link_libraries(open_spiel_core
