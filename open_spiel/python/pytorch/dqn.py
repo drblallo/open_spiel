@@ -62,8 +62,8 @@ class SonnetLinear(nn.Module):
         torch.Tensor(
             stats.truncnorm.rvs(
                 lower, upper, loc=mean, scale=stddev, size=[out_size,
-                                                            in_size])))
-    self._bias = nn.Parameter(torch.zeros([out_size]))
+                                                            in_size])).to("cuda"))
+    self._bias = nn.Parameter(torch.zeros([out_size]).to("cuda"))
 
   def forward(self, tensor):
     y = F.linear(tensor, self._weight, self._bias)
@@ -168,10 +168,10 @@ class DQN(rl_agent.AbstractAgent):
 
     # Create the Q-network instances
     self._q_network = MLP(state_representation_size, self._layer_sizes,
-                          num_actions)
+                          num_actions).to("cuda")
 
     self._target_q_network = MLP(state_representation_size, self._layer_sizes,
-                                 num_actions)
+                                 num_actions).to("cuda")
 
     if loss_str == "mse":
       self.loss_class = F.mse_loss
@@ -286,7 +286,7 @@ class DQN(rl_agent.AbstractAgent):
       action = np.random.choice(legal_actions)
       probs[legal_actions] = 1.0 / len(legal_actions)
     else:
-      info_state = torch.Tensor(np.reshape(info_state, [1, -1]))
+      info_state = torch.Tensor(np.reshape(info_state, [1, -1])).to("cuda")
       q_values = self._q_network(info_state).detach()[0]
       legal_q_values = q_values[legal_actions]
       action = legal_actions[torch.argmax(legal_q_values)]
@@ -318,13 +318,13 @@ class DQN(rl_agent.AbstractAgent):
       return None
 
     transitions = self._replay_buffer.sample(self._batch_size)
-    info_states = torch.Tensor([t.info_state for t in transitions])
-    actions = torch.LongTensor([t.action for t in transitions])
-    rewards = torch.Tensor([t.reward for t in transitions])
-    next_info_states = torch.Tensor([t.next_info_state for t in transitions])
-    are_final_steps = torch.Tensor([t.is_final_step for t in transitions])
+    info_states = torch.Tensor([t.info_state for t in transitions]).to("cuda")
+    actions = torch.LongTensor([t.action for t in transitions]).to("cuda")
+    rewards = torch.Tensor([t.reward for t in transitions]).to("cuda")
+    next_info_states = torch.Tensor([t.next_info_state for t in transitions]).to("cuda")
+    are_final_steps = torch.Tensor([t.is_final_step for t in transitions]).to("cuda")
     legal_actions_mask = torch.Tensor(
-        np.array([t.legal_actions_mask for t in transitions]))
+        np.array([t.legal_actions_mask for t in transitions])).to("cuda")
 
     self._q_values = self._q_network(info_states)
     self._target_q_values = self._target_q_network(next_info_states).detach()

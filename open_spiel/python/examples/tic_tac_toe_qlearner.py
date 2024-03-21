@@ -26,6 +26,7 @@ import sys
 from absl import app
 from absl import flags
 import numpy as np
+import torch
 
 from open_spiel.python import rl_environment
 from open_spiel.python.algorithms import random_agent
@@ -145,6 +146,9 @@ def one_run(epsilon_decay_duration, learning_rate):
     break
 
 def main(_):
+  torch.set_default_device('cuda')
+  torch.backends.cuda.matmul.allow_tf32 = True
+  torch.backends.cudnn.allow_tf32 = True
   for x in [2e3]:
     for y in [0.1]:
         one_run(x, y)
