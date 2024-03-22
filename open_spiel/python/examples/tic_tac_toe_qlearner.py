@@ -35,7 +35,7 @@ from open_spiel.python.pytorch.dqn import DQN
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_episodes", int(40e3), "Number of train episodes.")
+flags.DEFINE_integer("num_episodes", int(50e3), "Number of train episodes.")
 flags.DEFINE_boolean(
     "interactive_play",
     True,
@@ -83,7 +83,7 @@ def eval_against_random_bots(env, trained_agents, random_agents, num_episodes):
       time_step = env.reset()
       while not time_step.last():
         player_id = time_step.observations["current_player"]
-        agent_output = cur_agents[player_id].step(time_step, is_evaluation=True)
+        agent_output = random_agents[0].step(time_step, is_evaluation=True) if player_id == -1 else cur_agents[player_id].step(time_step, is_evaluation=True)
         time_step = env.step([agent_output.action])
         wins[player_pos] += time_step.rewards[player_pos]
   return wins / num_episodes
@@ -100,7 +100,7 @@ def one_run(epsilon_decay_duration, learning_rate):
 
   agents = [
       #tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions, discount_factor=0.95)
-      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.92, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=[256, 256, 256], learning_rate=learning_rate)
+      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.92, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=[512, 256, 256, 256], learning_rate=learning_rate, batch_size=256)
       for idx in range(num_players)
   ]
 
@@ -121,7 +121,7 @@ def one_run(epsilon_decay_duration, learning_rate):
     time_step = env.reset()
     while not time_step.last():
       player_id = time_step.observations["current_player"]
-      agent_output = agents[player_id].step(time_step)
+      agent_output = random_agents[0].step(time_step) if player_id == -1 else agents[player_id].step(time_step)
       time_step = env.step([agent_output.action])
 
     # Episode is over, step all agents with final info state.
@@ -139,7 +139,7 @@ def one_run(epsilon_decay_duration, learning_rate):
     time_step = env.reset()
     while not time_step.last():
       player_id = time_step.observations["current_player"]
-      agent_out = agents[player_id].step(time_step, is_evaluation=True)
+      agent_out = random_agents[0].step(time_step) if player_id == -1 else agents[player_id].step(time_step, is_evaluation=True)
       action = agent_out.action
       time_step = env.step([action])
       print(player_id, env.get_state.action_to_string(action), time_step.rewards[player_id])
@@ -149,8 +149,8 @@ def main(_):
   torch.set_default_device('cuda')
   torch.backends.cuda.matmul.allow_tf32 = True
   torch.backends.cudnn.allow_tf32 = True
-  for x in [2e3]:
-    for y in [0.1]:
+  for x in [2e3, 3e4]:
+    for y in [0.1, 0.01]:
         one_run(x, y)
 
 if __name__ == "__main__":

@@ -200,6 +200,15 @@ std::unique_ptr<State> SpaceHulkState::Clone() const {
   return std::unique_ptr<State>(new SpaceHulkState(*this));
 }
 
+ActionsAndProbs SpaceHulkState::ChanceOutcomes() const {
+    ActionsAndProbs toReturn;
+    auto actions = LegalActions();
+    toReturn.reserve(actions.size());
+    for (auto action : actions)
+        toReturn.push_back(std::pair{action, 1.0/actions.size()});
+    return toReturn;
+}
+
 std::string SpaceHulkGame::ActionToString(Player player,
                                           Action action_id) const {
 

@@ -4,7 +4,7 @@ import bounded_arg
 
 ent Board:
     BInt<0, 3>[9] slots
-    Bool playerTurn
+    Bool current_player
 
 
     fun get(Int x, Int y) -> Int:
@@ -48,14 +48,14 @@ ent Board:
         return false
 
     fun current_player() -> Int:
-        return int(self.playerTurn) + 1
+        return int(self.current_player) + 1
 
     fun next_turn():
-        self.playerTurn = !self.playerTurn
+        self.current_player = !self.current_player
 
 act play() -> Game:
     frm board : Board
-    board.playerTurn = false
+    board.current_player = false
     while !board.full():
         act mark(BInt<0, 3> x, BInt<0, 3> y) {
             board.get(x.value, y.value) == 0

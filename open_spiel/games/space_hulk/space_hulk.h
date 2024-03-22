@@ -55,8 +55,11 @@ public:
 
   SpaceHulkState(const SpaceHulkState &);
   SpaceHulkState &operator=(const SpaceHulkState &);
+  ActionsAndProbs ChanceOutcomes() const override;
 
-  bool IsChanceNode() const override { return false; }
+  bool IsChanceNode() const override {
+    return get_current_player(const_cast<::Game &>(game)) == -1;
+  }
 
   std::string Serialize() const override;
 
