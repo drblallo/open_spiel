@@ -172,18 +172,39 @@ ent Board:
     result = none()
     return result
 
-  fun score() -> Float:
-    if self.marine_killed == 1:
-      return -1.0
-    let x = self.units.get(0).x
-    let y = self.units.get(0).y
-    let original_distance = manhattan_distance(21, 2, 4, 13)
+  fun _single_marine_score(Unit u) -> Float:
+    let x = u.x
+    let y = u.y
+    let original_distance = manhattan_distance(21, 3, 4, 13)
     let current_distance = manhattan_distance(x.value, 21, y.value, 4)
-    if original_distance > current_distance:
-        return (0.9 - (float(current_distance) / 30.0)) + (float(self.gsc_killed.value) / 10.0)
-    if original_distance < current_distance:
-        return (-0.4 - (float(current_distance) / 30.0)) + (float(self.gsc_killed.value) / 30.0)
-    return + (float(self.gsc_killed.value) / 10.0)
+    return (float(original_distance) - float(current_distance)) / 30.0
+
+  fun _all_marine_average_score() -> Float:
+    let sum : Float
+    let count : Float
+    let x = 0
+    while x < 3:
+        if self.units.get(x).is_marine():
+            sum = sum + self._single_marine_score(self.units.get(x))
+            count = count + 1.0
+        x = x + 1
+    return 1.0 - (sum / count)
+
+  fun _any_marine_won() -> Bool:
+    let x = 0
+    while x < 3:
+        if self.units.get(x).is_marine():
+            if self._single_marine_score(self.units.get(x)) == 1.0:
+                return true
+        x = x + 1
+    return false
+
+  fun score() -> Float:
+    if self.marine_killed == 3:
+      return -1.0
+    if self._any_marine_won():
+        return 1.0
+    return ((self._all_marine_average_score() / 2.0) + (float(self.gsc_killed.value) / 30.0)) - (float(self.marine_killed.value) / 30.0)
 
 fun manhattan_distance(Int x1, Int x2, Int y1, Int y2) -> Int:
   let x = x1 - x2
@@ -238,8 +259,12 @@ fun make_board() -> Board:
 
   board.command_points.content = 0
   board.command_points.owner = 1
+  board.units.append(make_marine(4, 13))
+  board.units.append(make_marine(3, 13))
   board.units.append(make_marine(2, 13))
   board.units.get(0).direction = Direction::right
+  board.units.get(1).direction = Direction::right
+  board.units.get(2).direction = Direction::right
   board.units.append(make_genestealer(27, 13))
   board.units.append(make_genestealer(22, 10))
   board.units.append(make_genestealer(18, 10))
@@ -252,7 +277,7 @@ fun test_is_walkable() -> Bool:
         return false
     if board.is_walkable(2, 12):
         return false
-    if !board.is_walkable(3, 13):
+    if !board.is_walkable(5, 13):
         return false
     return true
 
@@ -273,6 +298,6 @@ fun test_get_unit_at() -> Bool:
         return false
     let res = board.get_index_of_unit_at(2, 13)
     if res is UnitArgType:
-        return res.value == 0
+        return res.value == 2
     return false
 
