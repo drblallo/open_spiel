@@ -63,14 +63,22 @@ void SpaceHulkState::DoApplyAction(Action move) {
 
   SPIEL_CHECK_GE(move , 0);
   SPIEL_CHECK_GT(getGame()->actionsTable.size(),  move);
-  SPIEL_CHECK_TRUE(canApplyAction(getGame()->actionsTable[move]));
+  SPIEL_CHECK_TRUE(canApplyAction(getGame()->actionsTable[move]));  
   auto* action = &getGame()->actionsTable[move];
 
 
   apply(const_cast<AnyGameAction&>(*action), const_cast<::Game&>(game));
 
-  previous_states_rewards = current_states_rewards;
-  current_states_rewards = score(const_cast<::Game&>(game));
+  if (CurrentPlayer() == 0)
+  {
+    previous_states_rewards[0] = current_states_rewards[0];
+    current_states_rewards[0] = score(const_cast<::Game&>(game));
+  } 
+  if (CurrentPlayer() == 1)
+  {
+    previous_states_rewards[1] = current_states_rewards[1];
+    current_states_rewards[1] = -score(const_cast<::Game&>(game));
+  }
 }
 
 std::vector<Action> SpaceHulkState::LegalActions() const {
@@ -82,6 +90,7 @@ std::vector<Action> SpaceHulkState::LegalActions() const {
       moves.push_back(action_index);
     }
   }
+  SPIEL_CHECK_TRUE(moves.size() != 0);
   return moves;
 }
 
@@ -93,9 +102,12 @@ std::string SpaceHulkState::ActionToString(Player player,
 
 SpaceHulkState::SpaceHulkState(std::shared_ptr<const Game> game) : State(game) {
     rl_play__r_Game(&this->game);
+    current_states_rewards[0] = score(const_cast<::Game&>(this->game));
+    previous_states_rewards[0] = score(const_cast<::Game&>(this->game));
+    current_states_rewards[1] = -score(const_cast<::Game&>(this->game));
+    previous_states_rewards[1] = -score(const_cast<::Game&>(this->game));
 }
 SpaceHulkState::~SpaceHulkState(){ 
-        // ToDo Fix
 }
 
 std::string SpaceHulkState::ToString() const {
@@ -147,12 +159,17 @@ bool SpaceHulkState::IsTerminal() const {
 }
 
 std::vector<double> SpaceHulkState::Rewards() const {
-    auto diff = current_states_rewards - previous_states_rewards;
-    return {diff, -diff};
+    std::vector<double> v;
+    for (int i = 0; i <  kNumPlayers; i++)
+        v.push_back(current_states_rewards[i] - previous_states_rewards[i]);
+    return v;
 }
 
 std::vector<double> SpaceHulkState::Returns() const {
-    return {current_states_rewards, -current_states_rewards};
+    std::vector<double> v;
+    for (int i = 0; i <  kNumPlayers; i++)
+        v.push_back(current_states_rewards[i]);
+    return v;
 }
 
 std::string SpaceHulkState::InformationStateString(Player player) const {

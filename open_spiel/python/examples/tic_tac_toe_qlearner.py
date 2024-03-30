@@ -31,11 +31,12 @@ import torch
 from open_spiel.python import rl_environment
 from open_spiel.python.algorithms import random_agent
 from open_spiel.python.algorithms import tabular_qlearner
-from open_spiel.python.pytorch.dqn import DQN
+from open_spiel.python.jax.dqn import DQN
+from open_spiel.python.pytorch.ppo import PPO
 
 FLAGS = flags.FLAGS
 
-flags.DEFINE_integer("num_episodes", int(50e3), "Number of train episodes.")
+flags.DEFINE_integer("num_episodes", int(1e7), "Number of train episodes.")
 flags.DEFINE_boolean(
     "interactive_play",
     True,
@@ -100,7 +101,7 @@ def one_run(epsilon_decay_duration, learning_rate):
 
   agents = [
       #tabular_qlearner.QLearner(player_id=idx, num_actions=num_actions, discount_factor=0.95)
-      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.92, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=[512, 256, 256, 256], learning_rate=learning_rate, batch_size=256)
+      DQN(player_id=idx, num_actions=num_actions, discount_factor=0.993, state_representation_size=state_size, epsilon_decay_duration=epsilon_decay_duration, hidden_layers_sizes=[1024, 512], learning_rate=learning_rate, batch_size=256, update_target_network_every=100, min_buffer_size_to_learn=1000, replay_buffer_capacity=10000, huber_loss_parameter=1.35, learn_every=100, gradient_clipping=0.5)
       for idx in range(num_players)
   ]
 
@@ -127,8 +128,6 @@ def one_run(epsilon_decay_duration, learning_rate):
     # Episode is over, step all agents with final info state.
     for agent in agents:
       agent.step(time_step)
-      if (cur_episode + 1) % int(5e3) == 0:
-          agent.step_scheduler()
 
   if not FLAGS.interactive_play:
     return

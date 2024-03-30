@@ -9,7 +9,7 @@ using UnitArgType = BInt<0, 10>
 
 
 ent Board:
-  Hidden<BInt<0, 2>[29][28]> map
+  Hidden<BInt<0, 3>[29][28]> map
   HiddenInformation<BInt<0, 5>> command_points
   Vector<Unit> units
   Bool is_done
@@ -57,6 +57,8 @@ ent Board:
             to_print.append('o')
           else if self.map.value[y][x] == 1:
             to_print.append('X')
+          else if self.map.value[y][x] == 2:
+            to_print.append('S')
           else:
             to_print.append(' ')
           x = x + 1
@@ -135,13 +137,18 @@ ent Board:
     if !overwatch and source.get_weapon_ap_cost() > source.action_points.value:
       return false
 
+    if source.is_jammed:
+      return false
+
     return true
 
   fun shoot_at(Unit source, Unit target, Bool overwatch, BInt<1, 7> roll1, BInt<1, 7> roll2) -> Bool:
     if !overwatch:
       source.action_points = source.action_points - source.get_weapon_ap_cost()
-    if overwatch:
       source.is_overwatching = false
+    if overwatch:
+      if roll1 == roll2:
+        source.is_jammed = true
     source.is_guarding = false
     return roll1 == 6 or roll2 == 6
 
@@ -177,7 +184,7 @@ ent Board:
     let y = u.y
     let original_distance = manhattan_distance(21, 3, 4, 13)
     let current_distance = manhattan_distance(x.value, 21, y.value, 4)
-    return (float(original_distance) - float(current_distance)) / 30.0
+    return (-float(original_distance) + float(current_distance)) / 30.0
 
   fun _all_marine_average_score() -> Float:
     let sum : Float
@@ -194,7 +201,8 @@ ent Board:
     let x = 0
     while x < 3:
         if self.units.get(x).is_marine():
-            if self._single_marine_score(self.units.get(x)) == 1.0:
+            ref marine = self.units.get(x)
+            if manhattan_distance(marine.x.value, 21, marine.y.value, 4) == 0:
                 return true
         x = x + 1
     return false
@@ -203,8 +211,22 @@ ent Board:
     if self.marine_killed == 3:
       return -1.0
     if self._any_marine_won():
-        return 1.0
+        return 1.0 + (float(self.gsc_killed.value) / 30.0)
     return ((self._all_marine_average_score() / 2.0) + (float(self.gsc_killed.value) / 30.0)) - (float(self.marine_killed.value) / 30.0)
+
+  fun get_spawn_point(Int spawn_index, Int x_out, Int y_out):
+    let x = 29
+    while x != 0:
+      x = x - 1
+        let y = 28
+        while y != 0:
+          y = y - 1
+          if self.map.value[y][x] == 2:
+            if spawn_index == 0:
+              x_out = x
+              y_out = y
+              return
+            spawn_index = spawn_index - 1
 
 fun manhattan_distance(Int x1, Int x2, Int y1, Int y2) -> Int:
   let x = x1 - x2
@@ -228,22 +250,22 @@ fun make_board() -> Board:
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 2, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 2, 0, 0, 0, 2, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
@@ -265,9 +287,6 @@ fun make_board() -> Board:
   board.units.get(0).direction = Direction::right
   board.units.get(1).direction = Direction::right
   board.units.get(2).direction = Direction::right
-  board.units.append(make_genestealer(27, 13))
-  board.units.append(make_genestealer(22, 10))
-  board.units.append(make_genestealer(18, 10))
   return board
 
 

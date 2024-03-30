@@ -46,6 +46,7 @@ fun size_as_observation_tensor(UnitKind obj) -> Int :
 ent Unit:
   Bool is_overwatching
   Bool is_guarding 
+  Bool is_jammed
   UnitKind kind
   HiddenInformation<BInt<0, 4>> genestealer_count
   Direction direction

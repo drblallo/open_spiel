@@ -92,8 +92,8 @@ public:
 protected:
   ::Game game;
   void DoApplyAction(Action move) override;
-  double previous_states_rewards = 0;
-  double current_states_rewards = 0;
+  std::array<double, 2> previous_states_rewards;
+  std::array<double, 2> current_states_rewards;
 
 private:
   Player outcome_ = kInvalidPlayer;

@@ -65,6 +65,15 @@ act do_assault(ctx Board board, frm UnitArgType unit_id) -> Assault:
     if source_roll.result > target_roll.result:
       maybe_dead_unit = index
 
+act place_blips(ctx Board board, frm BInt<0, 3> quantity_to_place) -> PlaceBlipPhase:
+  while quantity_to_place != 0:
+    act place_blip(BInt<0, 6> index)
+    let x : Int
+    let y : Int
+    board.get_spawn_point(index.value, x, y)
+    board.units.append(make_genestealer(x, y))
+    quantity_to_place = quantity_to_place - 1 
+
 act action_phase(ctx Board board, frm Faction current_faction) -> ActionPhase:
   while true:
     if current_faction == Faction::marine:
@@ -134,20 +143,32 @@ act action_phase(ctx Board board, frm Faction current_faction) -> ActionPhase:
               board.marine_killed = board.marine_killed + 1
           board.units.erase(to_kill.value)
 
+      act clear_jamming(UnitArgType unit_id) {
+        board.unit_id_is_valid(unit_id.value),
+        board.units.get(unit_id.value).is_jammed
+      }
+       board.units.get(unit_id.value).is_jammed = false
+       board.units.get(unit_id.value).is_guarding = false
+
       act pass_turn()
         return
 
       act quit()
         return
 
+
 act play() -> Game:
     frm board = make_board()
+    frm index : BInt<0, 3>
+    index.value = 2
+    subaction*(board) initial_blips = place_blips(board, index)
 
     while !(board.is_done):
         board.new_turn()
         subaction*(board) marine_frame = action_phase(board, Faction::marine)
         if board.is_done:
             return
+        subaction*(board) reinforcement_phase = place_blips(board, index)
         subaction*(board) genestealer_frame = action_phase(board, Faction::genestealer)
 
 fun gen_printer_parser():
@@ -157,100 +178,6 @@ fun gen_printer_parser():
 
 fun main() -> Int:
   let state = play()
-  let x : UnitArgType
-  x = 0
-  let gs : UnitArgType
-  gs = 3
-  let dice : DiceRoll 
-  dice = 6
-  let m : DirectionArgType 
-  m.value = Direction::right.value
-  state.quit()
-  state.quit()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  state.quit()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  state.quit()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  state.quit()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  state.quit()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  state.quit()
-  m.value = Direction::up.value
-  state.turn(x, m)
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.begin_move(x)
-  state.move(m)
-  state.end_move()
-  state.quit()
-  gs = 3
-  state.assault(gs)
-  state.roll_dice(dice)
-  state.roll_dice(dice)
-  state.roll_dice(dice)
-  dice = 1
-  state.roll_dice(dice)
-  state.roll_dice(dice)
-  print_indented(state)
-  state.board.pretty_print_board()
-  print(state.board.score())
   return int(state.is_done()) - 1
 
 fun test_enumerate() -> Bool:
@@ -265,11 +192,15 @@ fun test_enumerate() -> Bool:
 
 fun test_game_marine_can_roll() -> Bool:
   let game = play()
+  game.board.units.append(make_genestealer(27, 13))
   let gs : UnitArgType
   gs = 3
 
   let arg : UnitArgType
   arg.value = 0
+  let spawn_point : BInt<0, 6>
+  game.place_blip(spawn_point)
+  game.place_blip(spawn_point)
   game.shoot(arg, gs)
 
   let roll : DiceRoll
@@ -294,12 +225,18 @@ fun test_game_marine_can_step_forward() -> Bool:
   game.begin_move(arg)
   let arg2 : DirectionArgType 
   arg2.value = 1
+  let spawn_point : BInt<0, 6>
+  game.place_blip(spawn_point)
+  game.place_blip(spawn_point)
   game.move(arg2)
   game.end_move()
   return game.board.units.get(0).x == 5
 
 fun test_game_marine_can_end_turn() -> Bool:
     let game = play()
+    let spawn_point : BInt<0, 6>
+    game.place_blip(spawn_point)
+    game.place_blip(spawn_point)
     if game.board.units.get(0).action_points != 4:
         return false
     let arg : UnitArgType
