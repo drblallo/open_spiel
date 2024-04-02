@@ -50,10 +50,7 @@ class CategoricalMasked(Categorical):
                validate_args=None,
                masks=[],
                mask_value=None):
-    logits = torch.where(masks.bool(), logits, mask_value)
-    if torch.isnan(logits[0, 0]):
-        print(logits)
-    assert not torch.isnan(logits[0, 0])
+    logits = torch.where(masks.bool(), torch.nan_to_num(logits, -6, 6, -6), mask_value)
     super(CategoricalMasked, self).__init__(probs, logits, validate_args)
 
 
@@ -63,14 +60,18 @@ class PPOAgent(nn.Module):
   def __init__(self, num_actions, observation_shape, device):
     super().__init__()
     self.critic = nn.Sequential(
-        layer_init(nn.Linear(np.array(observation_shape).prod(), 1024)),
+        layer_init(nn.Linear(np.array(observation_shape).prod(), 2048)),
+        nn.Tanh(),
+        layer_init(nn.Linear(2048, 1024)),
         nn.Tanh(),
         layer_init(nn.Linear(1024, 1024)),
         nn.Tanh(),
         layer_init(nn.Linear(1024, 1), std=1.0),
     )
     self.actor = nn.Sequential(
-        layer_init(nn.Linear(np.array(observation_shape).prod(), 1024)),
+        layer_init(nn.Linear(np.array(observation_shape).prod(), 2048)),
+        nn.Tanh(),
+        layer_init(nn.Linear(2048, 1024)),
         nn.Tanh(),
         layer_init(nn.Linear(1024, 1024)),
         nn.Tanh(),

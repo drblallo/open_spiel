@@ -66,7 +66,10 @@ act do_assault(ctx Board board, frm UnitArgType unit_id) -> Assault:
       maybe_dead_unit = index
 
 act place_blips(ctx Board board, frm BInt<0, 3> quantity_to_place) -> PlaceBlipPhase:
+  board.set_is_gsc_decision()
   while quantity_to_place != 0:
+    if 26 < board.units.size():
+      return
     act place_blip(BInt<0, 6> index)
     let x : Int
     let y : Int
@@ -145,10 +148,22 @@ act action_phase(ctx Board board, frm Faction current_faction) -> ActionPhase:
 
       act clear_jamming(UnitArgType unit_id) {
         board.unit_id_is_valid(unit_id.value),
-        board.units.get(unit_id.value).is_jammed
+        board.units.get(unit_id.value).is_jammed,
+        board.units.get(unit_id.value).action_points != 0
       }
-       board.units.get(unit_id.value).is_jammed = false
-       board.units.get(unit_id.value).is_guarding = false
+       ref unit = board.units.get(unit_id.value)
+       unit.is_jammed = false
+       unit.is_guarding = false
+       unit.action_points = unit.action_points - 1
+
+      act toggle_door(UnitArgType unit_id) {
+        board.unit_id_is_valid(unit_id.value),
+        board.units.get(unit_id.value).action_points != 0,
+        board.is_facing_door(board.units.get(unit_id.value))
+      }
+       ref unit = board.units.get(unit_id.value)
+       unit.action_points = unit.action_points - 1
+       board.toggle_door(unit)
 
       act pass_turn()
         return
@@ -166,9 +181,11 @@ act play() -> Game:
     while !(board.is_done):
         board.new_turn()
         subaction*(board) marine_frame = action_phase(board, Faction::marine)
+        subaction*(board) reinforcement_phase = place_blips(board, index)
         if board.is_done:
             return
-        subaction*(board) reinforcement_phase = place_blips(board, index)
+        if board.any_marine_won():
+            return
         subaction*(board) genestealer_frame = action_phase(board, Faction::genestealer)
 
 fun gen_printer_parser():
@@ -178,6 +195,29 @@ fun gen_printer_parser():
 
 fun main() -> Int:
   let state = play()
+  print(score(state, 0))
+  let spawn_point : BInt<0, 6>
+  spawn_point.value = 0
+  state.place_blip(spawn_point)
+  state.place_blip(spawn_point)
+  state.quit()
+  state.place_blip(spawn_point)
+  state.place_blip(spawn_point)
+  let id : BInt<0, 30>
+  id.value = 6
+  print(score(state, 0))
+  state.begin_move(id)
+  let dir : BInt<0, 4>
+  dir.value = Direction::up.value
+  state.turn(id, dir)
+  state.move(dir)
+  state.end_move()
+  state.do_nothing()
+  state.begin_move(id)
+  state.move(dir)
+  state.end_move()
+  state.do_nothing()
+  print(score(state, 0))
   return int(state.is_done()) - 1
 
 fun test_enumerate() -> Bool:
@@ -272,8 +312,11 @@ fun get_current_player(Game g) -> Int:
       return 1
     return 0
 
-fun score(Game g) -> Float:
-    return g.board.score()
+fun score(Game g, Int player_id) -> Float:
+    if player_id == 0:
+      return g.board.score()
+    else:
+      return g.board.gsc_score()
 
 fun fuzz(Vector<Byte> input):
     let state = play()

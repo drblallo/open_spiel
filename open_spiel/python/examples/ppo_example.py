@@ -51,7 +51,7 @@ flags.DEFINE_string("exp_name",
                     os.path.basename(__file__).rstrip(".py"),
                     "the name of this experiment")
 flags.DEFINE_string("game_name", "atari", "the id of the OpenSpiel game")
-flags.DEFINE_float("learning_rate", 2.5e-4,
+flags.DEFINE_float("learning_rate", 2.5e-5,
                    "the learning rate of the optimizer")
 flags.DEFINE_integer("seed", 1, "seed of the experiment")
 flags.DEFINE_integer("total_timesteps", 10_000_000,
@@ -161,7 +161,7 @@ def play_out(envs, agents):
   while not envs.envs[0]._state.is_terminal():
     agent_output = agents[time_step.observations["current_player"]].step([time_step], is_evaluation=True)[0].action
     time_step = envs.envs[0].step([agent_output])
-    print(0, envs.envs[0].get_state.action_to_string(agent_output), time_step.rewards[0])
+    print(time_step.observations["current_player"], envs.envs[0].get_state.action_to_string(agent_output), time_step.rewards[0])
 
 def main(_):
   setup_logging()
@@ -231,9 +231,9 @@ def main(_):
   ) for i in range(2)]
 
 
-  for i in range(10):
-    train(agents, 0, envs, writers[0], i, 10)
-    train(agents, 1, envs, writers[1], i, 10)
+  for i in range(500):
+    train(agents, 0, envs, writers[0], i, 500)
+    train(agents, 1, envs, writers[1], i, 500)
     play_out(envs, agents)
 
   for writer in writers:

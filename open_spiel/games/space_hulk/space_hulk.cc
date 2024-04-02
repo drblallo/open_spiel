@@ -66,19 +66,14 @@ void SpaceHulkState::DoApplyAction(Action move) {
   SPIEL_CHECK_TRUE(canApplyAction(getGame()->actionsTable[move]));  
   auto* action = &getGame()->actionsTable[move];
 
-
+  int64_t actionDoer = CurrentPlayer();
   apply(const_cast<AnyGameAction&>(*action), const_cast<::Game&>(game));
 
-  if (CurrentPlayer() == 0)
+  if (actionDoer == 0 or actionDoer == 1)
   {
-    previous_states_rewards[0] = current_states_rewards[0];
-    current_states_rewards[0] = score(const_cast<::Game&>(game));
+    previous_states_rewards[actionDoer] = current_states_rewards[actionDoer];
+    current_states_rewards[actionDoer] = score(const_cast<::Game&>(game), actionDoer);
   } 
-  if (CurrentPlayer() == 1)
-  {
-    previous_states_rewards[1] = current_states_rewards[1];
-    current_states_rewards[1] = -score(const_cast<::Game&>(game));
-  }
 }
 
 std::vector<Action> SpaceHulkState::LegalActions() const {
@@ -102,10 +97,12 @@ std::string SpaceHulkState::ActionToString(Player player,
 
 SpaceHulkState::SpaceHulkState(std::shared_ptr<const Game> game) : State(game) {
     rl_play__r_Game(&this->game);
-    current_states_rewards[0] = score(const_cast<::Game&>(this->game));
-    previous_states_rewards[0] = score(const_cast<::Game&>(this->game));
-    current_states_rewards[1] = -score(const_cast<::Game&>(this->game));
-    previous_states_rewards[1] = -score(const_cast<::Game&>(this->game));
+    for (int64_t actionDoer = 0; actionDoer != kNumPlayers; actionDoer++)
+    {
+
+    current_states_rewards[actionDoer] = score(const_cast<::Game&>(this->game), actionDoer);
+    previous_states_rewards[actionDoer] = score(const_cast<::Game&>(this->game), actionDoer);
+    }
 }
 SpaceHulkState::~SpaceHulkState(){ 
 }
@@ -239,7 +236,7 @@ SpaceHulkGame::SpaceHulkGame(const GameParameters& params)
     : Game(kGameType, params) {
         auto fake_game = play();
 
-        game_size =  observation_tensor_size(fake_game);
+        game_size =  observation_tensor_size(fake_game) * 3;
 
         AnyGameAction action;
 
