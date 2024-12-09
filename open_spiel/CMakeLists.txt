@@ -4,6 +4,7 @@
 # https://gitlab.kitware.com/cmake/cmake/-/issues/19123
 cmake_minimum_required (VERSION 3.17)
 project (open_spiel)
+find_package(benchmark)
 
 # Define some nice terminal colors.
 if(NOT WIN32)
@@ -29,12 +30,13 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CUDA_STANDARD_REQUIRED TRUE)
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 set(CMAKE_CXX_STANDARD_REQUIRED TRUE)
 
 # Set default build type.
 set (BUILD_TYPE $ENV{BUILD_TYPE})
 if(NOT BUILD_TYPE)
-   set(BUILD_TYPE Testing
+    set(BUILD_TYPE Release
        CACHE STRING "Choose the type of build: Debug Release Testing."
        FORCE)
 endif()
@@ -109,7 +111,7 @@ openspiel_optional_dependency(OPEN_SPIEL_BUILD_WITH_ACPC           OFF
   "Build against the Universal Poker library.")
 openspiel_optional_dependency(OPEN_SPIEL_BUILD_WITH_GO             OFF
   "Build with support for Golang API.")
-openspiel_optional_dependency(OPEN_SPIEL_BUILD_WITH_HANABI         OFF
+openspiel_optional_dependency(OPEN_SPIEL_BUILD_WITH_HANABI         ON
   "Build against the Hanabi game.")
 openspiel_optional_dependency(OPEN_SPIEL_BUILD_WITH_JULIA          OFF
   "Build binary for Julia.")

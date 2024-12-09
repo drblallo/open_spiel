@@ -89,6 +89,8 @@ class OpenSpielHanabiState : public State {
 
  protected:
   void DoApplyAction(Action action) override;
+ public:
+  bool CanApplyAction(Action action);
 
  private:
   hanabi_learning_env::HanabiState state_;

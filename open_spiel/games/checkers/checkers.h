@@ -99,8 +99,8 @@ struct TurnHistoryInfo {
 // State of an in-play game.
 class CheckersState : public State {
  public:
-  explicit CheckersState(std::shared_ptr<const Game> game, int rows,
-                         int columns);
+  explicit CheckersState(std::shared_ptr<const Game> game, int rows = 8,
+                         int columns = 8);
   Player CurrentPlayer() const override {
     return IsTerminal() ? kTerminalPlayerId : current_player_;
   }

@@ -27,3 +27,7 @@ add_executable(hanabi_test hanabi_test.cc ${OPEN_SPIEL_OBJECTS}
                $<TARGET_OBJECTS:tests>)
 add_test(hanabi_test hanabi_test)
 target_include_directories (hanabi_test PUBLIC hanabi-learning-environment/hanabi_learning_environment)
+
+add_executable(hanabi_runner hanabi_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(hanabi_runner PRIVATE benchmark::benchmark hanabi_learning_environment)

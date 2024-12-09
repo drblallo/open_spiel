@@ -602,6 +602,18 @@ add_executable(tic_tac_toe_test tic_tac_toe/tic_tac_toe_test.cc ${OPEN_SPIEL_OBJ
                $<TARGET_OBJECTS:tests>)
 add_test(tic_tac_toe_test tic_tac_toe_test)
 
+add_executable(tic_tac_toe_runner tic_tac_toe/tic_tac_toe_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(tic_tac_toe_runner PRIVATE benchmark::benchmark)
+
+add_executable(battleship_runner battleship/battleship_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(battleship_runner PRIVATE benchmark::benchmark)
+
+add_executable(checkers_runner checkers/checkers_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(checkers_runner PRIVATE benchmark::benchmark)
+
 add_executable(laser_tag_test laser_tag/laser_tag_test.cc ${OPEN_SPIEL_OBJECTS}
                $<TARGET_OBJECTS:tests>)
 add_test(laser_tag_test laser_tag_test)

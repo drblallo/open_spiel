@@ -82,6 +82,8 @@ class TicTacToeState : public State {
  protected:
   std::array<CellState, kNumCells> board_;
   void DoApplyAction(Action move) override;
+ public:
+  bool CanApplyAction(Action move) ;
 
  private:
   bool HasLine(Player player) const;  // Does this player have a line?
@@ -108,6 +110,8 @@ class TicTacToeGame : public Game {
   }
   int MaxGameLength() const override { return kNumCells; }
   std::string ActionToString(Player player, Action action_id) const override;
+  std::vector<Action> AllActions() const;
+
 };
 
 CellState PlayerToState(Player player);

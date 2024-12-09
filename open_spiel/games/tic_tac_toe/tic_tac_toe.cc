@@ -92,6 +92,10 @@ bool BoardHasLine(const std::array<CellState, kNumCells>& board,
          (board[2] == c && board[4] == c && board[6] == c);
 }
 
+bool TicTacToeState::CanApplyAction(Action move) {
+    return board_[move] == CellState::kEmpty;
+}
+
 void TicTacToeState::DoApplyAction(Action move) {
   SPIEL_CHECK_EQ(board_[move], CellState::kEmpty);
   board_[move] = PlayerToState(CurrentPlayer());
@@ -100,6 +104,14 @@ void TicTacToeState::DoApplyAction(Action move) {
   }
   current_player_ = 1 - current_player_;
   num_moves_ += 1;
+}
+
+std::vector<Action> TicTacToeGame::AllActions() const {
+  std::vector<Action> moves;
+  for (int cell = 0; cell < kNumCells; ++cell) {
+      moves.push_back(cell);
+  }
+  return moves;
 }
 
 std::vector<Action> TicTacToeState::LegalActions() const {

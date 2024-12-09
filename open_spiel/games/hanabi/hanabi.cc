@@ -184,6 +184,12 @@ std::vector<double> OpenSpielHanabiState::Returns() const {
   return std::vector<double>(NumPlayers(), state_.Score());
 }
 
+bool OpenSpielHanabiState::CanApplyAction(Action action) {
+  auto move = IsChanceNode() ? game_->HanabiGame().GetChanceOutcome(action)
+                             : game_->HanabiGame().GetMove(action);
+    return state_.MoveIsLegal(move);
+}
+
 void OpenSpielHanabiState::DoApplyAction(Action action) {
   auto move = IsChanceNode() ? game_->HanabiGame().GetChanceOutcome(action)
                              : game_->HanabiGame().GetMove(action);
@@ -237,7 +243,7 @@ bool OpenSpielHanabiState::IsTerminal() const { return state_.IsTerminal(); }
 OpenSpielHanabiState::OpenSpielHanabiState(std::shared_ptr<const Game> game)
     : State(game),
       state_(const_cast<hanabi_learning_env::HanabiGame*>(
-             &(static_cast<const OpenSpielHanabiGame&>(*game).HanabiGame()))),
+             &(static_cast<const OpenSpielHanabiGame&>(*game).HanabiGame())), 0),
       game_(static_cast<const OpenSpielHanabiGame*>(game.get())),
       prev_state_score_(0.) {}
 
