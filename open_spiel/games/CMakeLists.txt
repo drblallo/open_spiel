@@ -614,6 +614,14 @@ add_executable(checkers_runner checkers/checkers_runner.cc ${OPEN_SPIEL_OBJECTS}
                $<TARGET_OBJECTS:tests>)
 target_link_libraries(checkers_runner PRIVATE benchmark::benchmark)
 
+add_executable(connect_four_runner connect_four/connect_four_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(connect_four_runner PRIVATE benchmark::benchmark)
+
+add_executable(catch_runner catch/catch_runner.cc ${OPEN_SPIEL_OBJECTS}
+               $<TARGET_OBJECTS:tests>)
+target_link_libraries(catch_runner PRIVATE benchmark::benchmark)
+
 add_executable(laser_tag_test laser_tag/laser_tag_test.cc ${OPEN_SPIEL_OBJECTS}
                $<TARGET_OBJECTS:tests>)
 add_test(laser_tag_test laser_tag_test)
